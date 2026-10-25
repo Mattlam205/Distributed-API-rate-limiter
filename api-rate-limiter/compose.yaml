@@ -1,0 +1,24 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 2s
+      retries: 10
+    ports:
+      - "127.0.0.1:6379:6379"
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      RATE_LIMIT: ${RATE_LIMIT:-5}
+      WINDOW_SECONDS: ${WINDOW_SECONDS:-60}
+      RATE_ALGORITHM: ${RATE_ALGORITHM:-sliding}
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
